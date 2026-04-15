@@ -1,26 +1,26 @@
 import { cookies } from "next/headers";
 import { supabase } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
-import type { RouteContext } from "next/dist/server/future/route-modules/app-route/module.compiled";
 
-function checkAdmin(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+async function checkAdmin() {
+  const cookieStore = await cookies();
   return cookieStore.get("admin_session")?.value === "1";
 }
 
-function checkMaster(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+async function checkMaster() {
+  const cookieStore = await cookies();
   return cookieStore.get("master_session")?.value === "1";
 }
 
 export async function PUT(
   request: Request,
-  { params }: RouteContext<"/api/players/[id]">
+  ctx: RouteContext<"/api/players/[id]">
 ) {
-  const cookieStore = await cookies();
-  if (!checkAdmin(cookieStore)) {
+  if (!(await checkAdmin())) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id } = await ctx.params;
   const { name } = await request.json();
   if (!name?.trim()) {
     return Response.json({ error: "Name is required." }, { status: 400 });
@@ -37,14 +37,13 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: RouteContext<"/api/players/[id]">
+  ctx: RouteContext<"/api/players/[id]">
 ) {
-  const cookieStore = await cookies();
-  if (!checkMaster(cookieStore)) {
+  if (!(await checkMaster())) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id } = await ctx.params;
 
   // Block delete if player has match history
   const { data: results } = await (supabase
