@@ -1,5 +1,3 @@
-import type { MatchResult } from "./types";
-
 export type Achievement = {
   id: string;
   icon: string;
@@ -8,80 +6,95 @@ export type Achievement = {
   unlocked: boolean;
 };
 
-// placements should be in chronological order (oldest first)
-export function computeAchievements(placements: (1 | 2 | 3 | 4)[]): Achievement[] {
+export type GameResult = {
+  placement: number;
+  wasLast: boolean;
+};
+
+// results should be in chronological order (oldest first)
+export function computeAchievements(results: GameResult[]): Achievement[] {
   return [
     {
       id: "one_of_every_kind",
       icon: "🏆",
       name: "One of Every Kind",
-      description: "Received all 4 placements (1st–4th) at least once.",
-      unlocked: [1, 2, 3, 4].every((p) => placements.includes(p as 1 | 2 | 3 | 4)),
+      description: "Has won, come 2nd, come 3rd, and finished last at least once.",
+      unlocked: oneOfEveryKind(results),
     },
     {
       id: "fallen_from_grace",
       icon: "😈",
       name: "Fallen from Grace",
-      description: "Won 2+ matches in a row, then came last.",
-      unlocked: fallenFromGrace(placements),
+      description: "Won 2+ matches in a row, then finished last.",
+      unlocked: fallenFromGrace(results),
     },
     {
       id: "the_underdog",
       icon: "💪",
       name: "The Underdog",
-      description: "Won a match after 3+ consecutive losses (4th place).",
-      unlocked: theUnderdog(placements),
+      description: "Won a match after finishing last 3+ times in a row.",
+      unlocked: theUnderdog(results),
     },
     {
       id: "consistency_is_key",
       icon: "🔒",
       name: "Consistency is Key",
-      description: "No last-place finish in 5 matches in a row.",
-      unlocked: consistencyIsKey(placements),
+      description: "Did not finish last in 5 matches in a row.",
+      unlocked: consistencyIsKey(results),
     },
     {
       id: "hot_streak",
       icon: "⚡",
       name: "Hot Streak",
       description: "Won 3 matches in a row.",
-      unlocked: hotStreak(placements),
+      unlocked: hotStreak(results),
     },
   ];
 }
 
-function fallenFromGrace(placements: (1 | 2 | 3 | 4)[]): boolean {
+function oneOfEveryKind(results: GameResult[]): boolean {
+  const placements = results.map((r) => r.placement);
+  return (
+    placements.includes(1) &&
+    placements.includes(2) &&
+    placements.includes(3) &&
+    results.some((r) => r.wasLast)
+  );
+}
+
+function fallenFromGrace(results: GameResult[]): boolean {
   let streak = 0;
-  for (let i = 0; i < placements.length; i++) {
-    if (placements[i] === 1) {
+  for (const r of results) {
+    if (r.placement === 1) {
       streak++;
     } else {
-      if (streak >= 2 && placements[i] === 4) return true;
+      if (streak >= 2 && r.wasLast) return true;
       streak = 0;
     }
   }
   return false;
 }
 
-function theUnderdog(placements: (1 | 2 | 3 | 4)[]): boolean {
-  let losses = 0;
-  for (const p of placements) {
-    if (p === 4) {
-      losses++;
-    } else if (p === 1) {
-      if (losses >= 3) return true;
-      losses = 0;
+function theUnderdog(results: GameResult[]): boolean {
+  let lastStreak = 0;
+  for (const r of results) {
+    if (r.wasLast) {
+      lastStreak++;
+    } else if (r.placement === 1) {
+      if (lastStreak >= 3) return true;
+      lastStreak = 0;
     } else {
-      losses = 0;
+      lastStreak = 0;
     }
   }
   return false;
 }
 
-function consistencyIsKey(placements: (1 | 2 | 3 | 4)[]): boolean {
-  if (placements.length < 5) return false;
+function consistencyIsKey(results: GameResult[]): boolean {
+  if (results.length < 5) return false;
   let streak = 0;
-  for (const p of placements) {
-    if (p !== 4) {
+  for (const r of results) {
+    if (!r.wasLast) {
       streak++;
       if (streak >= 5) return true;
     } else {
@@ -91,10 +104,10 @@ function consistencyIsKey(placements: (1 | 2 | 3 | 4)[]): boolean {
   return false;
 }
 
-function hotStreak(placements: (1 | 2 | 3 | 4)[]): boolean {
+function hotStreak(results: GameResult[]): boolean {
   let streak = 0;
-  for (const p of placements) {
-    if (p === 1) {
+  for (const r of results) {
+    if (r.placement === 1) {
       streak++;
       if (streak >= 3) return true;
     } else {
@@ -104,7 +117,12 @@ function hotStreak(placements: (1 | 2 | 3 | 4)[]): boolean {
   return false;
 }
 
-// Helper: given raw match_results rows (newest first from DB), reverse to chrono order
-export function placementsChronological(results: Pick<MatchResult, "placement">[]): (1 | 2 | 3 | 4)[] {
-  return [...results].reverse().map((r) => r.placement as 1 | 2 | 3 | 4);
+// Convert DB results (newest first) to chronological order for achievement calculation
+export function toChronological<T extends { wasLast: boolean; placement: number }>(
+  results: T[]
+): GameResult[] {
+  return [...results].reverse().map((r) => ({
+    placement: r.placement,
+    wasLast: r.wasLast,
+  }));
 }

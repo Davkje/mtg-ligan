@@ -15,7 +15,8 @@ A fullstack web app for a 4-player Magic: The Gathering Commander league.
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-ADMIN_PASSWORD=
+ADMIN_PASSWORD=      # protects /register and adding players
+MASTER_PASSWORD=     # protects editing/deleting matches on /history
 ```
 
 ## Pages
@@ -23,7 +24,8 @@ ADMIN_PASSWORD=
 |-------|-------------|
 | `/` | Leaderboard + last 5 matches feed |
 | `/register` | Password-protected match registration form |
-| `/history` | Full match history |
+| `/history` | Full match history; edit/delete behind MASTER_PASSWORD |
+| `/players` | All players list + add player (behind ADMIN_PASSWORD) |
 | `/player/[id]` | Player profile + achievements |
 
 ## Point System
@@ -40,7 +42,8 @@ ADMIN_PASSWORD=
 - `match_results` — id, match_id, player_id, placement (1–4)
 
 ## Admin Auth
-`/register` is protected by `ADMIN_PASSWORD` env var. Validated server-side via Route Handler (`POST /api/auth`). Session cookie `admin_session` set on success — never expose password to client.
+- `ADMIN_PASSWORD` → cookie `admin_session` via `POST /api/auth` — protects `/register` and adding players
+- `MASTER_PASSWORD` → cookie `master_session` via `POST /api/master-auth` — protects editing/deleting matches (`PUT/DELETE /api/matches/[id]`)
 
 ## Achievements (calculated dynamically)
 - 🏆 "One of Every Kind" — received all 4 placements at least once

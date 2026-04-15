@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { getLeaderboard, getRecentMatches } from "@/lib/data";
-import { POINTS } from "@/lib/types";
+import { getPoints } from "@/lib/types";
 
-const PLACEMENT_LABEL: Record<1 | 2 | 3 | 4, string> = {
+const PLACEMENT_LABEL: Record<number, string> = {
   1: "1st",
   2: "2nd",
   3: "3rd",
   4: "4th",
+  5: "5th",
 };
 
 export default async function HomePage() {
@@ -74,42 +75,54 @@ export default async function HomePage() {
           <p className="text-foreground/40 text-sm">No matches yet.</p>
         ) : (
           <div className="space-y-3">
-            {recentMatches.map((match) => (
-              <div key={match.id} className="rounded-lg border border-border bg-surface p-4">
-                <p className="text-xs text-foreground/50 mb-3">
-                  {new Date(match.played_at).toLocaleDateString("sv-SE", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {match.results.map((r) => (
-                    <div
-                      key={r.id}
-                      className={`rounded p-2 text-center text-sm ${
-                        r.placement === 1
-                          ? "bg-accent/20 border border-accent/40"
-                          : "bg-background/60"
-                      }`}
+            {recentMatches.map((match) => {
+              const playerCount = match.results.length;
+              return (
+                <div key={match.id} className="rounded-lg border border-border bg-surface p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Link
+                      href={`/match/${match.id}`}
+                      className="text-xs text-foreground/50 hover:text-accent transition-colors"
                     >
-                      <div className="text-xs text-foreground/50 mb-0.5">
-                        {PLACEMENT_LABEL[r.placement as 1 | 2 | 3 | 4]}
-                      </div>
-                      <Link
-                        href={`/player/${r.player.id}`}
-                        className="font-semibold hover:text-accent transition-colors"
+                      {new Date(match.played_at).toLocaleDateString("sv-SE", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </Link>
+                    <span className="text-xs text-foreground/30">{playerCount} players</span>
+                  </div>
+                  <div
+                    className="grid gap-2"
+                    style={{ gridTemplateColumns: `repeat(${playerCount}, minmax(0, 1fr))` }}
+                  >
+                    {match.results.map((r) => (
+                      <div
+                        key={r.id}
+                        className={`rounded p-2 text-center text-sm ${
+                          r.placement === 1
+                            ? "bg-accent/20 border border-accent/40"
+                            : "bg-background/60"
+                        }`}
                       >
-                        {r.player.name}
-                      </Link>
-                      <div className="text-xs text-accent mt-0.5">
-                        +{POINTS[r.placement as 1 | 2 | 3 | 4]} pts
+                        <div className="text-xs text-foreground/50 mb-0.5">
+                          {PLACEMENT_LABEL[r.placement]}
+                        </div>
+                        <Link
+                          href={`/player/${r.player.id}`}
+                          className="font-semibold hover:text-accent transition-colors text-xs sm:text-sm"
+                        >
+                          {r.player.name}
+                        </Link>
+                        <div className="text-xs text-accent mt-0.5">
+                          +{getPoints(playerCount, r.placement)}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

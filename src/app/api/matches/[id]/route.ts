@@ -5,17 +5,47 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/lib/types";
 
 type InsertRow = Database["public"]["Tables"]["match_results"]["Insert"];
-type MatchEntry = { playerId: string; placement: number };
+type Entry = { playerId: string; placement: number };
 
-export async function POST(request: NextRequest) {
+async function checkAdmin() {
   const cookieStore = await cookies();
-  if (cookieStore.get("admin_session")?.value !== "1") {
+  return cookieStore.get("admin_session")?.value === "1";
+}
+
+async function checkMaster() {
+  const cookieStore = await cookies();
+  return cookieStore.get("master_session")?.value === "1";
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  ctx: RouteContext<"/api/matches/[id]">
+) {
+  if (!(await checkMaster())) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await ctx.params;
+  const { error } = await supabase.from("matches").delete().eq("id", id);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  revalidatePath("/");
+  revalidatePath("/history");
+  return Response.json({ ok: true });
+}
+
+export async function PUT(
+  request: NextRequest,
+  ctx: RouteContext<"/api/matches/[id]">
+) {
+  if (!(await checkAdmin())) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await ctx.params;
   const { playedAt, entries, notes } = (await request.json()) as {
     playedAt: string;
-    entries: MatchEntry[];
+    entries: Entry[];
     notes?: string;
   };
 
@@ -23,9 +53,9 @@ export async function POST(request: NextRequest) {
   if (n < 3 || n > 5) {
     return Response.json({ error: "Match must have 3–5 players." }, { status: 400 });
   }
-  const placements = entries.map((e) => e.placement).sort((a, b) => a - b);
+  const sorted = entries.map((e) => e.placement).sort((a, b) => a - b);
   const expected = Array.from({ length: n }, (_, i) => i + 1);
-  if (placements.join(",") !== expected.join(",")) {
+  if (sorted.join(",") !== expected.join(",")) {
     return Response.json(
       { error: `Each placement (1–${n}) must be used exactly once.` },
       { status: 400 }
@@ -33,15 +63,15 @@ export async function POST(request: NextRequest) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: match, error: mErr } = await (supabase.from("matches") as any)
-    .insert({ played_at: playedAt, notes: notes?.trim() || null })
-    .select()
-    .single();
-
+  const { error: mErr } = await (supabase.from("matches") as any)
+    .update({ played_at: playedAt, notes: notes?.trim() || null })
+    .eq("id", id);
   if (mErr) return Response.json({ error: mErr.message }, { status: 500 });
 
+  await supabase.from("match_results").delete().eq("match_id", id);
+
   const rows: InsertRow[] = entries.map((e) => ({
-    match_id: (match as { id: string }).id,
+    match_id: id,
     player_id: e.playerId,
     placement: e.placement as InsertRow["placement"],
   }));
@@ -52,7 +82,6 @@ export async function POST(request: NextRequest) {
 
   revalidatePath("/");
   revalidatePath("/history");
-  revalidatePath("/register");
-
-  return Response.json({ ok: true, matchId: (match as { id: string }).id });
+  revalidatePath(`/match/${id}`);
+  return Response.json({ ok: true });
 }

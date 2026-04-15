@@ -29,7 +29,9 @@ export default function RootLayout({
             <nav className="flex items-center gap-4 text-sm">
               <Link href="/" className="hover:text-accent transition-colors">Leaderboard</Link>
               <Link href="/history" className="hover:text-accent transition-colors">History</Link>
+              <Link href="/players" className="hover:text-accent transition-colors">Players</Link>
               <Link href="/register" className="hover:text-accent transition-colors">Register Match</Link>
+              <Link href="/about" className="hover:text-accent transition-colors">About</Link>
             </nav>
           </div>
         </header>
