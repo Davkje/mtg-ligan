@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Name is required." }, { status: 400 });
   }
 
-  const { error } = await supabase.from("players").insert({ name: name.trim() });
+  const { error } = await (supabase.from("players") as any).insert({ name: name.trim() });
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   revalidatePath("/players");
