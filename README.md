@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MTG Commander League
 
-## Getting Started
+A fullstack web app for tracking a 4-player Magic: The Gathering Commander league.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router)
+- **Supabase** — Postgres + anon key client
+- **Tailwind CSS v4**
+- **TypeScript**
+
+---
+
+## Local Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Create `.env.local`
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+ADMIN_PASSWORD=choose-a-password
+```
+
+### 3. Set up Supabase tables
+
+Run these SQL statements in the **Supabase SQL editor**:
+
+```sql
+-- Players
+create table players (
+  id uuid primary key default gen_random_uuid(),
+  name text not null
+);
+
+-- Matches
+create table matches (
+  id uuid primary key default gen_random_uuid(),
+  played_at date not null
+);
+
+-- Match results
+create table match_results (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references matches(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  placement smallint not null check (placement between 1 and 4)
+);
+
+-- Unique placement per match
+alter table match_results
+  add constraint unique_placement_per_match unique (match_id, placement);
+```
+
+### 4. Seed players
+
+Replace names as needed:
+
+```sql
+insert into players (name) values
+  ('Carl'),
+  ('Hanna');
+  ('Gustav'),
+  ('David'),
+```
+
+### 5. Seed sample matches
+
+```sql
+-- Match 1
+with m as (
+  insert into matches (played_at) values ('2025-01-10') returning id
+)
+insert into match_results (match_id, player_id, placement)
+select m.id, p.id, case p.name
+  when 'Carl'   then 1
+  when 'David'     then 2
+  when 'Hanna' then 3
+  when 'Gustav'   then 4
+end
+from m, players p;
+
+-- Match 2
+with m as (
+  insert into matches (played_at) values ('2025-01-17') returning id
+)
+insert into match_results (match_id, player_id, placement)
+select m.id, p.id, case p.name
+  when 'Gustav'     then 1
+  when 'Carl'   then 2
+  when 'Hanna'   then 3
+  when 'David' then 4
+end
+from m, players p;
+```
+
+### 6. Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Pages
 
-## Learn More
+| Route          | Description                           |
+| -------------- | ------------------------------------- |
+| `/`            | Leaderboard + last 5 matches feed     |
+| `/history`     | Full match history                    |
+| `/register`    | Password-protected match registration |
+| `/player/[id]` | Player profile + achievements         |
 
-To learn more about Next.js, take a look at the following resources:
+## Point System
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Placement | Points |
+| --------- | ------ |
+| 1st       | 100    |
+| 2nd       | 50     |
+| 3rd       | 25     |
+| 4th       | 10     |

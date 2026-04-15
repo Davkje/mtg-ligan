@@ -1,65 +1,131 @@
-import Image from "next/image";
+import Link from "next/link";
+import { getLeaderboard, getRecentMatches } from "@/lib/data";
+import { getPoints } from "@/lib/types";
 
-export default function Home() {
+const PLACEMENT_LABEL: Record<number, string> = {
+  1: "1st",
+  2: "2nd",
+  3: "3rd",
+  4: "4th",
+  5: "5th",
+};
+
+export default async function HomePage() {
+  const [leaderboard, recentMatches] = await Promise.all([
+    getLeaderboard(),
+    getRecentMatches(5),
+  ]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="space-y-10">
+      {/* Leaderboard */}
+      <section>
+        <h1 className="text-2xl font-bold mb-4">Leaderboard</h1>
+        <div className="rounded-lg border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-surface text-foreground/60 uppercase text-xs tracking-wider">
+              <tr>
+                <th className="px-4 py-3 text-left">Rank</th>
+                <th className="px-4 py-3 text-left">Player</th>
+                <th className="px-4 py-3 text-right">Points</th>
+                <th className="px-4 py-3 text-right">Matches</th>
+                <th className="px-4 py-3 text-right">Win %</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {leaderboard.map((entry, i) => (
+                <tr
+                  key={entry.player.id}
+                  className={i === 0 ? "bg-accent/10" : "hover:bg-surface transition-colors"}
+                >
+                  <td className="px-4 py-3 font-mono text-foreground/50">
+                    {i === 0 ? "👑" : `#${entry.rank}`}
+                  </td>
+                  <td className="px-4 py-3 font-semibold">
+                    <Link
+                      href={`/player/${entry.player.id}`}
+                      className="hover:text-accent transition-colors"
+                    >
+                      {entry.player.name}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-accent">
+                    {entry.totalPoints}
+                  </td>
+                  <td className="px-4 py-3 text-right text-foreground/70">{entry.matches}</td>
+                  <td className="px-4 py-3 text-right text-foreground/70">{entry.winRate}%</td>
+                </tr>
+              ))}
+              {leaderboard.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-foreground/40">
+                    No matches played yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </section>
+
+      {/* Recent matches */}
+      <section>
+        <h2 className="text-xl font-bold mb-4">Recent Matches</h2>
+        {recentMatches.length === 0 ? (
+          <p className="text-foreground/40 text-sm">No matches yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {recentMatches.map((match) => {
+              const playerCount = match.results.length;
+              return (
+                <div key={match.id} className="rounded-lg border border-border bg-surface p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Link
+                      href={`/match/${match.id}`}
+                      className="text-xs text-foreground/50 hover:text-accent transition-colors"
+                    >
+                      {new Date(match.played_at).toLocaleDateString("sv-SE", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </Link>
+                    <span className="text-xs text-foreground/30">{playerCount} players</span>
+                  </div>
+                  <div
+                    className="grid gap-2"
+                    style={{ gridTemplateColumns: `repeat(${playerCount}, minmax(0, 1fr))` }}
+                  >
+                    {match.results.map((r) => (
+                      <div
+                        key={r.id}
+                        className={`rounded p-2 text-center text-sm ${
+                          r.placement === 1
+                            ? "bg-accent/20 border border-accent/40"
+                            : "bg-background/60"
+                        }`}
+                      >
+                        <div className="text-xs text-foreground/50 mb-0.5">
+                          {PLACEMENT_LABEL[r.placement]}
+                        </div>
+                        <Link
+                          href={`/player/${r.player.id}`}
+                          className="font-semibold hover:text-accent transition-colors text-xs sm:text-sm"
+                        >
+                          {r.player.name}
+                        </Link>
+                        <div className="text-xs text-accent mt-0.5">
+                          +{getPoints(playerCount, r.placement)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
