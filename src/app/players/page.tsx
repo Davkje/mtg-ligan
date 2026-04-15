@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { getLeaderboard, getPlayers } from "@/lib/data";
 import PlayersClient from "./PlayersClient";

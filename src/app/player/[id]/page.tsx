@@ -1,8 +1,11 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPlayerWithStats } from "@/lib/data";
 import { computeAchievements, toChronological } from "@/lib/achievements";
 import { getPoints } from "@/lib/types";
+import PlayerActions from "./PlayerActions";
 
 const PLACEMENT_LABEL: Record<number, string> = {
   1: "1st", 2: "2nd", 3: "3rd", 4: "4th", 5: "5th",
@@ -34,7 +37,14 @@ export default async function PlayerPage({
         <Link href="/" className="text-sm text-foreground/50 hover:text-accent transition-colors">
           ← Leaderboard
         </Link>
-        <h1 className="text-3xl font-bold mt-2">{player.name}</h1>
+        <div className="flex items-center justify-between mt-2">
+          <h1 className="text-3xl font-bold">{player.name}</h1>
+          <PlayerActions
+            playerId={player.id}
+            playerName={player.name}
+            hasMatches={results.length > 0}
+          />
+        </div>
       </div>
 
       {/* Stats */}

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getAllMatches, getPlayers } from "@/lib/data";
 import MatchList from "./MatchList";
 

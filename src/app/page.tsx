@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { getLeaderboard, getRecentMatches } from "@/lib/data";
 import { getPoints } from "@/lib/types";
