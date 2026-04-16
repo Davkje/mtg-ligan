@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { RiCloseLine, RiMenuLine } from "@remixicon/react";
 
 const links = [
 	{ href: "/", label: "Leaderboard" },
@@ -25,21 +26,7 @@ export default function MobileNav() {
 				className="flex flex-col justify-center items-center w-8 h-8 gap-1.5"
 				aria-label="Toggle menu"
 			>
-				<motion.span
-					animate={open ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
-					transition={{ duration: 0.2 }}
-					className="block w-5 h-0.5 bg-foreground origin-center"
-				/>
-				<motion.span
-					animate={open ? { opacity: 0 } : { opacity: 1 }}
-					transition={{ duration: 0.15 }}
-					className="block w-5 h-0.5 bg-foreground"
-				/>
-				<motion.span
-					animate={open ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }}
-					transition={{ duration: 0.2 }}
-					className="block w-5 h-0.5 bg-foreground origin-center"
-				/>
+				<RiMenuLine />
 			</button>
 
 			{/* Overlay + drawer */}
@@ -68,7 +55,7 @@ export default function MobileNav() {
 								className="absolute top-4 right-4 text-foreground/50 hover:text-foreground transition-colors text-2xl leading-none"
 								aria-label="Close menu"
 							>
-								×
+								<RiCloseLine />
 							</button>
 							<ul className="space-y-1">
 								{links.map(({ href, label }, i) => {
