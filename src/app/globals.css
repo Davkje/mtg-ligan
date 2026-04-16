@@ -35,7 +35,7 @@ body {
 	color: var(--foreground);
 	font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 	background:
-		linear-gradient(to bottom, rgba(0, 0, 0, 0.8), var(--background) 80%), url("/mtg.png");
+		linear-gradient(to bottom, rgba(0, 0, 0, 0.8), var(--background) 60%), url("/mtg.png");
 
 	background-attachment: fixed;
 	background-size: cover;
@@ -45,8 +45,4 @@ body {
 
 header {
 	background: linear-gradient(to bottom, black, rgba(0, 0, 0, 0) 90%);
-}
-
-button {
-	background-color: var(--background);
 }

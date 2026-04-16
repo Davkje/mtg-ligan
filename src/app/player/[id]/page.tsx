@@ -6,7 +6,23 @@ import { getPlayerWithStats } from "@/lib/data";
 import { computeAchievements, toChronological } from "@/lib/achievements";
 import { getPoints } from "@/lib/types";
 import PlayerActions from "./PlayerActions";
-import { RiArrowLeftSLine } from "@remixicon/react";
+import {
+  RiArrowLeftSLine,
+  RiTrophyLine,
+  RiSkullLine,
+  RiFireLine,
+  RiShieldLine,
+  RiFlashlightLine,
+  type RemixiconComponentType,
+} from "@remixicon/react";
+
+const ACHIEVEMENT_ICONS: Record<string, RemixiconComponentType> = {
+  one_of_every_kind: RiTrophyLine,
+  fallen_from_grace: RiSkullLine,
+  the_underdog: RiFireLine,
+  consistency_is_key: RiShieldLine,
+  hot_streak: RiFlashlightLine,
+};
 
 const PLACEMENT_LABEL: Record<number, string> = {
 	1: "1st",
@@ -78,18 +94,21 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 							<div>
 								<p className="text-xs text-foreground/50 uppercase tracking-wider mb-2">Unlocked</p>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-									{unlocked.map((a) => (
-										<div
-											key={a.id}
-											className="flex items-start gap-3 rounded-lg border border-accent/30 bg-accent/10 p-3"
-										>
-											<span className="text-2xl">{a.icon}</span>
-											<div>
-												<p className="font-semibold text-sm">{a.name}</p>
-												<p className="text-xs text-foreground/60">{a.description}</p>
+									{unlocked.map((a) => {
+										const Icon = ACHIEVEMENT_ICONS[a.id];
+										return (
+											<div
+												key={a.id}
+												className="flex items-start gap-3 rounded-lg border border-accent/30 bg-accent/10 p-3"
+											>
+												{Icon && <Icon size={24} className="shrink-0 text-accent mt-0.5" />}
+												<div>
+													<p className="font-semibold text-sm">{a.name}</p>
+													<p className="text-xs text-foreground/60">{a.description}</p>
+												</div>
 											</div>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							</div>
 						)}
@@ -97,18 +116,21 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 							<div>
 								<p className="text-xs text-foreground/50 uppercase tracking-wider mb-2">Locked</p>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-									{locked.map((a) => (
-										<div
-											key={a.id}
-											className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3 opacity-50"
-										>
-											<span className="text-2xl grayscale">{a.icon}</span>
-											<div>
-												<p className="font-semibold text-sm">{a.name}</p>
-												<p className="text-xs text-foreground/60">{a.description}</p>
+									{locked.map((a) => {
+										const Icon = ACHIEVEMENT_ICONS[a.id];
+										return (
+											<div
+												key={a.id}
+												className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3 opacity-40"
+											>
+												{Icon && <Icon size={24} className="shrink-0 mt-0.5" />}
+												<div>
+													<p className="font-semibold text-sm">{a.name}</p>
+													<p className="text-xs text-foreground/60">{a.description}</p>
+												</div>
 											</div>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							</div>
 						)}

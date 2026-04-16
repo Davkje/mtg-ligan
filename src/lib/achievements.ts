@@ -1,6 +1,5 @@
 export type Achievement = {
   id: string;
-  icon: string;
   name: string;
   description: string;
   unlocked: boolean;
@@ -16,35 +15,30 @@ export function computeAchievements(results: GameResult[]): Achievement[] {
   return [
     {
       id: "one_of_every_kind",
-      icon: "🏆",
       name: "One of Every Kind",
       description: "Has won, come 2nd, come 3rd, and finished last at least once.",
       unlocked: oneOfEveryKind(results),
     },
     {
       id: "fallen_from_grace",
-      icon: "😈",
       name: "Fallen from Grace",
       description: "Won 2+ matches in a row, then finished last.",
       unlocked: fallenFromGrace(results),
     },
     {
       id: "the_underdog",
-      icon: "💪",
       name: "The Underdog",
       description: "Won a match after finishing last 3+ times in a row.",
       unlocked: theUnderdog(results),
     },
     {
       id: "consistency_is_key",
-      icon: "🔒",
       name: "Consistency is Key",
       description: "Did not finish last in 5 matches in a row.",
       unlocked: consistencyIsKey(results),
     },
     {
       id: "hot_streak",
-      icon: "⚡",
       name: "Hot Streak",
       description: "Won 3 matches in a row.",
       unlocked: hotStreak(results),

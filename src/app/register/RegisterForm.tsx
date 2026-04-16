@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Player } from "@/lib/types";
 import { POINTS_TABLE } from "@/lib/types";
+import { RiCheckboxCircleLine } from "@remixicon/react";
 
 const PLACEMENT_LABEL: Record<number, string> = {
 	1: "1st place",
@@ -183,7 +184,7 @@ export default function RegisterForm({ players: initialPlayers }: { players: Pla
 	if (success) {
 		return (
 			<div className="max-w-sm mx-auto mt-16 text-center space-y-4">
-				<p className="text-2xl">✅</p>
+				<RiCheckboxCircleLine size={40} className="mx-auto text-accent" />
 				<p className="text-lg font-semibold">Match registered!</p>
 				<div className="flex gap-3 justify-center">
 					<button

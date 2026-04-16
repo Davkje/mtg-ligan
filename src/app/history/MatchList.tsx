@@ -188,7 +188,7 @@ export default function MatchList({ matches, players }: Props) {
 				{!adminAuthed ? (
 					<button
 						onClick={() => setShowAdminModal(true)}
-						className="text-xs bg-background text-foreground/50 hover:text-accent border border-border rounded px-3 py-1.5 transition-colors"
+						className="rounded bg-background border px-4 py-2 text-sm font-semibold text-foreground/30 hover:text-foreground transition-colors cursor-pointer"
 					>
 						Manage matches
 					</button>
@@ -433,18 +433,22 @@ export default function MatchList({ matches, players }: Props) {
 										<div className="flex items-center justify-between mb-3">
 											<Link
 												href={`/match/${match.id}`}
-												className="text-sm font-semibold hover:text-accent transition-colors"
+												className="group flex gap-2 text-sm transition-colors"
 											>
-												{new Date(match.played_at).toLocaleDateString("sv-SE", {
-													year: "numeric",
-													month: "long",
-													day: "numeric",
-												})}
-											</Link>
-											<div className="flex items-center gap-2">
-												<span className="text-xs text-foreground/40">
-													{playerCount}p · #{matches.length - idx}
+												<span className="text-foreground/70 group-hover:text-accent transition-colors">
+													{new Date(match.played_at).toLocaleDateString("sv-SE", {
+														year: "numeric",
+														month: "long",
+														day: "numeric",
+													})}
 												</span>
+												<span className="text-foreground/50 group-hover:text-accent transition-colors">
+													{playerCount} players
+												</span>
+											</Link>
+
+											<div className="flex items-center gap-2">
+												<span className="text-xs text-foreground/40">#{matches.length - idx}</span>
 												{adminAuthed && (
 													<>
 														<button
@@ -494,7 +498,7 @@ export default function MatchList({ matches, players }: Props) {
 										</div>
 
 										{match.notes && (
-											<p className="mt-3 text-xs text-foreground/50 italic border-t border-border pt-2">
+											<p className="mt-4 text-sm text-foreground/50 italic border-t border-border pt-2">
 												{match.notes}
 											</p>
 										)}

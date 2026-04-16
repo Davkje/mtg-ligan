@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getMatchById } from "@/lib/data";
 import { getPoints } from "@/lib/types";
 import { RiArrowLeftSLine, RiStackFill, RiStarFill } from "@remixicon/react";
-import { div } from "framer-motion/client";
 
 const PLACEMENT_LABEL: Record<number, string> = {
 	1: "1st",

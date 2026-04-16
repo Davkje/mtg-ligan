@@ -58,7 +58,7 @@ export default function RootLayout({
 					</div>
 				</header>
 				<main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8">{children}</main>
-				<footer className="border-border text-center text-xs text-foreground/40 py-4">
+				<footer className="border-border text-center text-xs text-foreground/10 py-4">
 					Ligan - MTG Commander
 				</footer>
 			</body>
