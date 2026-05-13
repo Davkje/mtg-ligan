@@ -25,6 +25,7 @@ type EditState = {
 	playerCount: PlayerCount;
 	assignments: Record<number, string>;
 	notes: string;
+	type: "official" | "practice";
 };
 
 export default function MatchList({ matches, players }: Props) {
@@ -114,7 +115,7 @@ export default function MatchList({ matches, players }: Props) {
 		const playerCount = Math.max(3, Math.min(5, match.results.length)) as PlayerCount;
 		const assignments: Record<number, string> = { 1: "", 2: "", 3: "", 4: "", 5: "" };
 		for (const r of match.results) assignments[r.placement] = r.player_id;
-		setEditState({ playedAt: match.played_at, playerCount, assignments, notes: match.notes ?? "" });
+		setEditState({ playedAt: match.played_at, playerCount, assignments, notes: match.notes ?? "", type: match.type });
 		setEditingId(match.id);
 		setActionError("");
 	}
@@ -153,7 +154,7 @@ export default function MatchList({ matches, players }: Props) {
 		const res = await fetch(`/api/matches/${matchId}`, {
 			method: "PUT",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ playedAt: editState.playedAt, entries, notes: editState.notes }),
+			body: JSON.stringify({ playedAt: editState.playedAt, entries, notes: editState.notes, type: editState.type }),
 		});
 		setSaving(false);
 		if (res.ok) {
@@ -395,6 +396,28 @@ export default function MatchList({ matches, players }: Props) {
 										</div>
 
 										<div>
+											<label className="block text-xs text-foreground/50 mb-1">Game type</label>
+											<div className="flex gap-2">
+												{(["official", "practice"] as const).map((t) => (
+													<button
+														key={t}
+														type="button"
+														onClick={() =>
+															setEditState((s) => (s ? { ...s, type: t } : s))
+														}
+														className={`flex-1 rounded border px-2 py-1 text-xs font-semibold transition-colors capitalize ${
+															editState.type === t
+																? "border-accent bg-accent/20 text-accent"
+																: "border-border hover:bg-background"
+														}`}
+													>
+														{t}
+													</button>
+												))}
+											</div>
+										</div>
+
+										<div>
 											<label className="block text-xs text-foreground/50 mb-1">Notes</label>
 											<textarea
 												value={editState.notes}
@@ -433,7 +456,7 @@ export default function MatchList({ matches, players }: Props) {
 										<div className="flex items-center justify-between mb-3">
 											<Link
 												href={`/match/${match.id}`}
-												className="group flex gap-2 text-sm transition-colors"
+												className="group flex gap-2 items-center text-sm transition-colors"
 											>
 												<span className="text-foreground/70 group-hover:text-accent transition-colors">
 													{new Date(match.played_at).toLocaleDateString("sv-SE", {
@@ -443,8 +466,13 @@ export default function MatchList({ matches, players }: Props) {
 													})}
 												</span>
 												<span className="text-foreground/50 group-hover:text-accent transition-colors">
-													{playerCount} players
+													{playerCount}p
 												</span>
+												{match.type === "practice" && (
+													<span className="text-xs px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/40 capitalize">
+														Practice
+													</span>
+												)}
 											</Link>
 
 											<div className="flex items-center gap-2">

@@ -7,9 +7,9 @@ export type Database = {
         Update: { id?: string; name?: string };
       };
       matches: {
-        Row: { id: string; played_at: string; notes: string | null };
-        Insert: { id?: string; played_at: string; notes?: string | null };
-        Update: { id?: string; played_at?: string; notes?: string | null };
+        Row: { id: string; played_at: string; notes: string | null; type: "official" | "practice" };
+        Insert: { id?: string; played_at: string; notes?: string | null; type?: "official" | "practice" };
+        Update: { id?: string; played_at?: string; notes?: string | null; type?: "official" | "practice" };
       };
       match_results: {
         Row: { id: string; match_id: string; player_id: string; placement: 1 | 2 | 3 | 4 | 5 };

@@ -13,10 +13,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { playedAt, entries, notes } = (await request.json()) as {
+  const { playedAt, entries, notes, type } = (await request.json()) as {
     playedAt: string;
     entries: MatchEntry[];
     notes?: string;
+    type?: "official" | "practice";
   };
 
   const n = entries.length;
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: match, error: mErr } = await (supabase.from("matches") as any)
-    .insert({ played_at: playedAt, notes: notes?.trim() || null })
+    .insert({ played_at: playedAt, notes: notes?.trim() || null, type: type ?? "official" })
     .select()
     .single();
 

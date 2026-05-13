@@ -38,6 +38,7 @@ export default function RegisterForm({ players: initialPlayers }: { players: Pla
 		4: "",
 		5: "",
 	});
+	const [matchType, setMatchType] = useState<"official" | "practice">("official");
 	const [notes, setNotes] = useState("");
 	const [submitError, setSubmitError] = useState("");
 	const [submitLoading, setSubmitLoading] = useState(false);
@@ -132,7 +133,7 @@ export default function RegisterForm({ players: initialPlayers }: { players: Pla
 		const res = await fetch("/api/matches", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ playedAt, entries, notes }),
+			body: JSON.stringify({ playedAt, entries, notes, type: matchType }),
 		});
 		setSubmitLoading(false);
 
@@ -150,6 +151,7 @@ export default function RegisterForm({ players: initialPlayers }: { players: Pla
 		setAssignments({ 1: "", 2: "", 3: "", 4: "", 5: "" });
 		setPlayedAt(today);
 		setPlayerCount(4);
+		setMatchType("official");
 		setNotes("");
 	}
 
@@ -239,6 +241,30 @@ export default function RegisterForm({ players: initialPlayers }: { players: Pla
 							</button>
 						))}
 					</div>
+				</div>
+
+				{/* Match type */}
+				<div>
+					<label className="block text-sm text-foreground/70 mb-2">Game type</label>
+					<div className="flex gap-2">
+						{(["official", "practice"] as const).map((t) => (
+							<button
+								key={t}
+								type="button"
+								onClick={() => setMatchType(t)}
+								className={`flex-1 rounded border px-3 py-2 text-sm font-semibold transition-colors capitalize ${
+									matchType === t
+										? "border-accent bg-accent/20 text-accent"
+										: "border-border hover:bg-surface"
+								}`}
+							>
+								{t}
+							</button>
+						))}
+					</div>
+					{matchType === "practice" && (
+						<p className="text-xs text-foreground/40 mt-1.5">Practice games do not count toward league standings.</p>
+					)}
 				</div>
 
 				{/* Placements */}

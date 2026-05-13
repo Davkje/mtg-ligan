@@ -37,7 +37,14 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 						day: "numeric",
 					})}
 				</h1>
-				<p className="text-sm text-foreground/40 mt-1">{playerCount}-player game</p>
+				<div className="flex items-center gap-2 mt-1">
+					<p className="text-sm text-foreground/40">{playerCount}-player game</p>
+					{match.type === "practice" && (
+						<span className="text-xs px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/40">
+							Practice
+						</span>
+					)}
+				</div>
 			</div>
 
 			{/* Results */}

@@ -9,9 +9,19 @@ export async function getPlayers(): Promise<Player[]> {
 }
 
 export async function getLeaderboard(): Promise<PlayerStats[]> {
+  // Only official matches count toward the leaderboard
+  const { data: officialMatchData } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("type", "official");
+  const officialIds = ((officialMatchData ?? []) as { id: string }[]).map((m) => m.id);
+
+  if (officialIds.length === 0) return [];
+
   const { data, error } = await supabase
     .from("match_results")
-    .select("player_id, placement, match_id, players(id, name)");
+    .select("player_id, placement, match_id, players(id, name)")
+    .in("match_id", officialIds);
   if (error) throw error;
 
   type ResultRow = { player_id: string; placement: number; match_id: string; players: Player };
@@ -139,7 +149,24 @@ export type PlayerResultRow = MatchResult & {
   wasLast: boolean;
 };
 
-export async function getPlayerWithStats(playerId: string) {
+export type PlayerPageData = {
+  player: Player;
+  officialStats: {
+    totalPoints: number;
+    matches: number;
+    wins: number;
+    winRate: number;
+    rank: number | null;
+  };
+  allStats: {
+    matches: number;
+    wins: number;
+    winRate: number;
+  };
+  results: PlayerResultRow[];
+};
+
+export async function getPlayerWithStats(playerId: string): Promise<PlayerPageData> {
   const { data: playerData, error: pErr } = await supabase
     .from("players")
     .select("*")
@@ -150,7 +177,7 @@ export async function getPlayerWithStats(playerId: string) {
 
   const { data: resultData, error: rErr } = await supabase
     .from("match_results")
-    .select("*, matches(id, played_at, notes)")
+    .select("*, matches(id, played_at, notes, type)")
     .eq("player_id", playerId)
     .order("matches(played_at)", { ascending: false });
   if (rErr) throw rErr;
@@ -175,12 +202,37 @@ export async function getPlayerWithStats(playerId: string) {
     return { ...r, playerCount, wasLast: r.placement === playerCount };
   });
 
-  const totalPoints = results.reduce((sum, r) => sum + getPoints(r.playerCount, r.placement), 0);
-  const wins = results.filter((r) => r.placement === 1).length;
-  const winRate = results.length > 0 ? Math.round((wins / results.length) * 100) : 0;
+  // Official-only stats (used for rank and leaderboard)
+  const officialResults = results.filter((r) => r.matches.type === "official");
+  const officialPoints = officialResults.reduce(
+    (sum, r) => sum + getPoints(r.playerCount, r.placement),
+    0,
+  );
+  const officialWins = officialResults.filter((r) => r.placement === 1).length;
+  const officialWinRate =
+    officialResults.length > 0 ? Math.round((officialWins / officialResults.length) * 100) : 0;
+
+  // All-games stats
+  const allWins = results.filter((r) => r.placement === 1).length;
+  const allWinRate = results.length > 0 ? Math.round((allWins / results.length) * 100) : 0;
 
   const leaderboard = await getLeaderboard();
   const rank = leaderboard.find((s) => s.player.id === playerId)?.rank ?? null;
 
-  return { player, stats: { totalPoints, matches: results.length, wins, winRate, rank }, results };
+  return {
+    player,
+    officialStats: {
+      totalPoints: officialPoints,
+      matches: officialResults.length,
+      wins: officialWins,
+      winRate: officialWinRate,
+      rank,
+    },
+    allStats: {
+      matches: results.length,
+      wins: allWins,
+      winRate: allWinRate,
+    },
+    results,
+  };
 }

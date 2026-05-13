@@ -42,7 +42,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 		notFound();
 	}
 
-	const { player, stats, results } = data;
+	const { player, officialStats, allStats, results } = data;
 	const achievements = computeAchievements(toChronological(results));
 	const unlocked = achievements.filter((a) => a.unlocked);
 	const locked = achievements.filter((a) => !a.unlocked);
@@ -68,20 +68,42 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 				</div>
 			</div>
 
-			{/* Stats */}
-			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-				{[
-					{ label: "Rank", value: stats.rank ? `#${stats.rank}` : "—" },
-					{ label: "Total Points", value: stats.totalPoints.toLocaleString() },
-					{ label: "Matches", value: stats.matches },
-					{ label: "Win Rate", value: `${stats.winRate}%` },
-				].map(({ label, value }) => (
-					<div key={label} className="rounded-lg border border-border bg-surface p-4 text-center">
-						<div className="text-2xl font-bold text-accent">{value}</div>
-						<div className="text-xs text-foreground/50 mt-1">{label}</div>
-					</div>
-				))}
+			{/* Official stats */}
+			<div>
+				<p className="text-xs text-foreground/40 uppercase tracking-wider mb-2">League standings</p>
+				<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+					{[
+						{ label: "Rank", value: officialStats.rank ? `#${officialStats.rank}` : "—" },
+						{ label: "Points", value: officialStats.totalPoints.toLocaleString() },
+						{ label: "Matches", value: officialStats.matches },
+						{ label: "Win Rate", value: `${officialStats.winRate}%` },
+					].map(({ label, value }) => (
+						<div key={label} className="rounded-lg border border-border bg-surface p-4 text-center">
+							<div className="text-2xl font-bold text-accent">{value}</div>
+							<div className="text-xs text-foreground/50 mt-1">{label}</div>
+						</div>
+					))}
+				</div>
 			</div>
+
+			{/* All games stats (only show if there are practice games) */}
+			{allStats.matches > officialStats.matches && (
+				<div>
+					<p className="text-xs text-foreground/40 uppercase tracking-wider mb-2">All games</p>
+					<div className="grid grid-cols-3 gap-3">
+						{[
+							{ label: "Matches", value: allStats.matches },
+							{ label: "Wins", value: allStats.wins },
+							{ label: "Win Rate", value: `${allStats.winRate}%` },
+						].map(({ label, value }) => (
+							<div key={label} className="rounded-lg border border-border bg-surface/50 p-3 text-center">
+								<div className="text-xl font-bold text-foreground/70">{value}</div>
+								<div className="text-xs text-foreground/40 mt-1">{label}</div>
+							</div>
+						))}
+					</div>
+				</div>
+			)}
 
 			{/* Achievements */}
 			<section>
@@ -156,13 +178,20 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 							</thead>
 							<tbody className="divide-y divide-border">
 								{results.map((r) => (
-									<tr key={r.id} className="hover:bg-surface transition-colors">
+									<tr key={r.id} className={`hover:bg-surface transition-colors ${r.matches.type === "practice" ? "opacity-60" : ""}`}>
 										<td className="px-4 py-3 text-foreground/70">
-											{new Date(r.matches.played_at).toLocaleDateString("sv-SE", {
-												year: "numeric",
-												month: "short",
-												day: "numeric",
-											})}
+											<div className="flex items-center gap-2">
+												{new Date(r.matches.played_at).toLocaleDateString("sv-SE", {
+													year: "numeric",
+													month: "short",
+													day: "numeric",
+												})}
+												{r.matches.type === "practice" && (
+													<span className="text-xs px-1 py-0.5 rounded bg-foreground/10 text-foreground/40">
+														Practice
+													</span>
+												)}
+											</div>
 										</td>
 										<td className="px-4 py-3 text-center">
 											<span
@@ -181,7 +210,11 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 											{r.playerCount}p
 										</td>
 										<td className="px-4 py-3 text-right font-bold text-accent">
-											+{getPoints(r.playerCount, r.placement)}
+											{r.matches.type === "practice" ? (
+												<span className="text-foreground/30 font-normal">—</span>
+											) : (
+												<>+{getPoints(r.playerCount, r.placement)}</>
+											)}
 										</td>
 									</tr>
 								))}

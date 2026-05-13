@@ -43,10 +43,11 @@ export async function PUT(
   }
 
   const { id } = await ctx.params;
-  const { playedAt, entries, notes } = (await request.json()) as {
+  const { playedAt, entries, notes, type } = (await request.json()) as {
     playedAt: string;
     entries: Entry[];
     notes?: string;
+    type?: "official" | "practice";
   };
 
   const n = entries.length;
@@ -64,7 +65,7 @@ export async function PUT(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: mErr } = await (supabase.from("matches") as any)
-    .update({ played_at: playedAt, notes: notes?.trim() || null })
+    .update({ played_at: playedAt, notes: notes?.trim() || null, ...(type && { type }) })
     .eq("id", id);
   if (mErr) return Response.json({ error: mErr.message }, { status: 500 });
 
