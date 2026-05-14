@@ -6,6 +6,7 @@
 	--color-surface: var(--surface);
 	--color-border: var(--border);
 	--color-accent: var(--accent);
+	--color-accent-opt: var(--accent-opt);
 	--color-accent-hover: var(--accent-hover);
 	--font-sans: var(--font-geist-sans);
 	--font-mono: var(--font-geist-mono);
@@ -19,6 +20,7 @@
 	--border: #2a2a2a;
 	--accent: #31ac7f;
 	--accent-hover: #3fc493;
+	--accent-opt: #f7ba37;
 }
 
 body {

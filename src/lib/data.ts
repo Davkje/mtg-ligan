@@ -14,6 +14,67 @@ export async function getCommanders(): Promise<Commander[]> {
   return (data ?? []) as Commander[];
 }
 
+// Returns per-player commander IDs sorted by usage count (most used first)
+export async function getPlayerCommanderUsage(): Promise<Record<string, string[]>> {
+  const { data } = await supabase
+    .from("match_results")
+    .select("player_id, commander_id")
+    .not("commander_id", "is", null);
+
+  const usage = new Map<string, Map<string, number>>();
+  for (const r of (data ?? []) as { player_id: string; commander_id: string }[]) {
+    if (!r.commander_id) continue;
+    if (!usage.has(r.player_id)) usage.set(r.player_id, new Map());
+    const cm = usage.get(r.player_id)!;
+    cm.set(r.commander_id, (cm.get(r.commander_id) ?? 0) + 1);
+  }
+
+  const result: Record<string, string[]> = {};
+  for (const [playerId, cm] of usage) {
+    result[playerId] = [...cm.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([commanderId]) => commanderId);
+  }
+  return result;
+}
+
+export type MatchSummary = {
+  total: number;
+  ranked: number;
+  practice: number;
+  lastWeek: number;
+  byLeague: Map<string, number>;
+  uniqueCommanders: number;
+};
+
+export async function getMatchSummary(leagues: League[]): Promise<MatchSummary> {
+  const practiceIds = new Set(leagues.filter((l) => l.is_practice).map((l) => l.id));
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  const [matchData, cmdData] = await Promise.all([
+    supabase.from("matches").select("id, played_at, league_id"),
+    supabase.from("match_results").select("commander_id").not("commander_id", "is", null),
+  ]);
+
+  const matches = (matchData.data ?? []) as { id: string; played_at: string; league_id: string }[];
+  const byLeague = new Map<string, number>();
+  let ranked = 0;
+  let practice = 0;
+  let lastWeek = 0;
+
+  for (const m of matches) {
+    byLeague.set(m.league_id, (byLeague.get(m.league_id) ?? 0) + 1);
+    if (practiceIds.has(m.league_id)) practice++;
+    else ranked++;
+    if (m.played_at >= weekAgo) lastWeek++;
+  }
+
+  const cmds = (cmdData.data ?? []) as { commander_id: string }[];
+  const uniqueCommanders = new Set(cmds.map((c) => c.commander_id)).size;
+
+  return { total: matches.length, ranked, practice, lastWeek, byLeague, uniqueCommanders };
+}
+
 export async function getLeagues(): Promise<League[]> {
   const { data, error } = await supabase.from("leagues").select("*").order("name");
   if (error) throw error;

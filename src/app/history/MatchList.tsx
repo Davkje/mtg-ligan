@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Commander, League, Player } from "@/lib/types";
 import { getPointsForPlacement } from "@/lib/types";
 import type { MatchWithResults } from "@/lib/data";
+import CommanderSearch from "@/components/CommanderSearch";
 
 const PLACEMENT_LABEL: Record<number, string> = {
 	1: "1st",
@@ -485,19 +486,17 @@ export default function MatchList({
 
 											{showNewCommander && (
 												<div className="flex items-center gap-2 rounded border border-accent/30 bg-accent/5 p-2">
-													<input
-														type="text"
+													<CommanderSearch
 														value={newCommanderName}
-														onChange={(e) => setNewCommanderName(e.target.value)}
+														onChange={setNewCommanderName}
 														onKeyDown={(e) => {
 															if (e.key === "Enter") {
 																e.preventDefault();
 																handleAddCommander(e);
 															}
 														}}
-														placeholder="Commander name"
 														autoFocus
-														className="flex-1 rounded border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+														className="flex-1"
 													/>
 													<button
 														type="button"
@@ -667,9 +666,12 @@ export default function MatchList({
 														key={r.id}
 														className={`rounded p-2 text-center text-sm ${r.placement === 1 ? "bg-accent/20 border border-accent/40" : "bg-background/60"}`}
 													>
-														<div className="text-xs text-foreground/50 mb-0.5">
-															{PLACEMENT_LABEL[r.placement]}
-															{tied && <span className="ml-0.5 text-yellow-400">T</span>}
+														<div
+															className={`text-xs text-foreground/50 mb-0.5 ${tied && " text-accent-opt"}`}
+														>
+															<span className={tied ? "text-accent-opt" : "text-accent"}>
+																{PLACEMENT_LABEL[r.placement]}
+															</span>
 														</div>
 														<Link
 															href={`/player/${r.player.id}`}
@@ -702,7 +704,7 @@ export default function MatchList({
 					};
 
 					return (
-						<div className="grid grid-cols-1 lg:grid-cols-[1fr_500px] gap-x-8 gap-y-6 items-start">
+						<div className="grid grid-cols-1 lg:grid-cols-[1fr_500px] gap-x-4 gap-y-6 items-start">
 							{/* Left: competitive leagues */}
 							<div className="space-y-6">
 								{leagueOrder.length === 0 ? (
