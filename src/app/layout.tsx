@@ -30,7 +30,7 @@ export default function RootLayout({
 		<html lang="en" className={`${geist.variable} ${jacquarda.variable} h-full`}>
 			<body className="min-h-full flex flex-col text-foreground antialiased">
 				<header className="sticky top-0 z-50 ">
-					<div className="max-w-4xl mx-auto px-4 flex items-center gap-6 h-14">
+					<div className="max-w-350 mx-auto px-4 flex items-center gap-6 h-14">
 						<Link
 							href="/"
 							className="flex items-center font-bold text-accent text-lg tracking-tight"
@@ -57,7 +57,7 @@ export default function RootLayout({
 						</div>
 					</div>
 				</header>
-				<main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8">{children}</main>
+				<main className="flex-1 max-w-350 w-full mx-auto px-4 py-8">{children}</main>
 				<footer className="border-border text-center text-xs text-foreground/10 py-4">
 					Ligan - MTG Commander
 				</footer>

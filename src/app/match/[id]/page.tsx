@@ -39,11 +39,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 				</h1>
 				<div className="flex items-center gap-2 mt-1">
 					<p className="text-sm text-foreground/40">{playerCount}-player game</p>
-					{match.type === "practice" && (
-						<span className="text-xs px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/40">
-							Practice
-						</span>
-					)}
+					<span className={`text-xs px-1.5 py-0.5 rounded ${
+						match.league.is_practice ? "bg-foreground/10 text-foreground/40" : "bg-accent/10 text-accent/70"
+					}`}>
+						{match.league.name}
+					</span>
 				</div>
 			</div>
 
@@ -79,13 +79,16 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 											{PLACEMENT_LABEL[r.placement]}
 										</span>
 									</td>
-									<td className="px-4 py-3 font-semibold">
+									<td className="px-4 py-3">
 										<Link
 											href={`/player/${r.player.id}`}
-											className="hover:text-accent transition-colors"
+											className="font-semibold hover:text-accent transition-colors"
 										>
 											{r.player.name}
 										</Link>
+										{r.commander && (
+											<div className="text-xs text-foreground/40 mt-0.5">{r.commander.name}</div>
+										)}
 									</td>
 									<td className="px-4 py-3 text-right font-bold text-accent">
 										+{getPoints(playerCount, r.placement)}

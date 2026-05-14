@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/lib/types";
 
 type InsertRow = Database["public"]["Tables"]["match_results"]["Insert"];
-type Entry = { playerId: string; placement: number };
+type Entry = { playerId: string; placement: number; commanderId?: string | null };
 
 async function checkAdmin() {
   const cookieStore = await cookies();
@@ -43,29 +43,31 @@ export async function PUT(
   }
 
   const { id } = await ctx.params;
-  const { playedAt, entries, notes, type } = (await request.json()) as {
+  const { playedAt, entries, notes, leagueId } = (await request.json()) as {
     playedAt: string;
     entries: Entry[];
     notes?: string;
-    type?: "official" | "practice";
+    leagueId?: string;
   };
 
   const n = entries.length;
   if (n < 3 || n > 5) {
     return Response.json({ error: "Match must have 3–5 players." }, { status: 400 });
   }
-  const sorted = entries.map((e) => e.placement).sort((a, b) => a - b);
-  const expected = Array.from({ length: n }, (_, i) => i + 1);
-  if (sorted.join(",") !== expected.join(",")) {
-    return Response.json(
-      { error: `Each placement (1–${n}) must be used exactly once.` },
-      { status: 400 }
-    );
+  const placements = entries.map((e) => e.placement);
+  if (placements.some((p) => p < 1 || p > n)) {
+    return Response.json({ error: `Placements must be between 1 and ${n}.` }, { status: 400 });
+  }
+  if (!placements.includes(1)) {
+    return Response.json({ error: "At least one player must be in 1st place." }, { status: 400 });
+  }
+  if (new Set(entries.map((e) => e.playerId)).size !== n) {
+    return Response.json({ error: "Each player can only appear once." }, { status: 400 });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: mErr } = await (supabase.from("matches") as any)
-    .update({ played_at: playedAt, notes: notes?.trim() || null, ...(type && { type }) })
+    .update({ played_at: playedAt, notes: notes?.trim() || null, ...(leagueId && { league_id: leagueId }) })
     .eq("id", id);
   if (mErr) return Response.json({ error: mErr.message }, { status: 500 });
 
@@ -75,6 +77,7 @@ export async function PUT(
     match_id: id,
     player_id: e.playerId,
     placement: e.placement as InsertRow["placement"],
+    commander_id: e.commanderId || null,
   }));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
