@@ -233,6 +233,38 @@ export async function getRecentMatches(limit = 5): Promise<MatchWithResults[]> {
   }));
 }
 
+export async function getLeagueMatches(leagueId: string, limit = 10): Promise<MatchWithResults[]> {
+  const { data: matchData, error: mErr } = await supabase
+    .from("matches")
+    .select("*, leagues(id, name, is_practice)")
+    .eq("league_id", leagueId)
+    .order("played_at", { ascending: false })
+    .limit(limit);
+  if (mErr) throw mErr;
+
+  type RawMatch = Match & { leagues: League };
+  const matches = ((matchData ?? []) as RawMatch[]).map((m) => ({ ...m, league: m.leagues }));
+  if (!matches.length) return [];
+
+  const ids = matches.map((m) => m.id);
+  const { data: resultData, error: rErr } = await supabase
+    .from("match_results")
+    .select("*, players(id, name), commanders(id, name)")
+    .in("match_id", ids)
+    .order("placement");
+  if (rErr) throw rErr;
+
+  type RawResult = MatchResult & { players: Player; commanders: Commander | null };
+  const results = (resultData ?? []) as RawResult[];
+
+  return matches.map((match) => ({
+    ...match,
+    results: results
+      .filter((r) => r.match_id === match.id)
+      .map((r) => ({ ...r, player: r.players, commander: r.commanders })),
+  }));
+}
+
 export async function getAllMatches(): Promise<MatchWithResults[]> {
   const { data: matchData, error: mErr } = await supabase
     .from("matches")

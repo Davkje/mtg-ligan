@@ -511,7 +511,7 @@ export default function RegisterForm({
 					)}
 
 					{/* Column headers */}
-					<div className="grid grid-cols-[1fr_1fr_auto] gap-2 px-1">
+					<div className="hidden sm:grid sm:grid-cols-[1fr_1fr_auto] sm:gap-2 px-1">
 						<span className="text-xs text-foreground/40">Player</span>
 						<span className="text-xs text-foreground/40">Commander</span>
 						<span className="text-xs text-foreground/40 w-32 text-center">Placement</span>
@@ -524,7 +524,8 @@ export default function RegisterForm({
 							placementCounts.set(e.placement, (placementCounts.get(e.placement) ?? 0) + 1),
 						);
 						return (
-							<div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+							<div key={i} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:gap-2 sm:items-center">
+							<div className="grid grid-cols-2 gap-2 sm:contents">
 								<select
 									value={entry.playerId}
 									onChange={(e) => updateEntry(i, { playerId: e.target.value })}
@@ -577,7 +578,8 @@ export default function RegisterForm({
 										</select>
 									);
 								})()}
-								<div className="flex gap-1 w-32">
+							</div>
+							<div className="flex gap-1 sm:w-32">
 									{Array.from({ length: playerCount }, (_, k) => k + 1).map((p) => {
 										const selected = entry.placement === p;
 										const tied = selected && (placementCounts.get(p) ?? 0) > 1;

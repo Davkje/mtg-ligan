@@ -325,19 +325,20 @@ export default async function HomePage() {
 						<h2 className="text-xl font-bold mb-4">Active leagues</h2>
 						<div className="flex flex-col flex-wrap gap-4">
 							{leaguesWithCount.map(({ league, count }) => (
-								<div
+								<Link
 									key={league.id}
-									className={`flex items-center gap-2 rounded-lg border px-4 py-4 text-lg ${
+									href={`/leagues/${league.id}`}
+									className={`flex items-center gap-2 rounded-lg border px-4 py-4 text-lg transition-colors ${
 										league.is_practice
-											? "border-border text-foreground/40"
-											: "border-accent/30 bg-accent/5 text-foreground/70"
+											? "border-border text-foreground/40 hover:bg-surface"
+											: "border-accent/30 bg-accent/5 text-foreground/70 hover:bg-accent/10"
 									}`}
 								>
 									<span className="font-medium">{league.name}</span>
 									<span className="text-foreground/40">
 										{count} {count === 1 ? "match" : "matches"}
 									</span>
-								</div>
+								</Link>
 							))}
 						</div>
 					</div>
