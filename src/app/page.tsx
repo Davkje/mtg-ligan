@@ -1,14 +1,19 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { getLeaderboard, getLeagues, getMatchSummary, getRecentMatches } from "@/lib/data";
+import {
+	getLeaderboard,
+	getLeagueLeaderboard,
+	getLeagues,
+	getMatchSummary,
+	getRecentMatches,
+} from "@/lib/data";
 import { getPointsForPlacement } from "@/lib/types";
 import type { MatchWithResults } from "@/lib/data";
 import {
 	RiStarFill,
 	RiSwordLine,
 	RiTrophyLine,
-	RiGroupLine,
 	RiCalendarLine,
 	RiBarChartLine,
 	RiFireLine,
@@ -40,6 +45,14 @@ export default async function HomePage() {
 		.map((l) => ({ league: l, count: summary.byLeague.get(l.id) ?? 0 }))
 		.filter((x) => x.count > 0)
 		.sort((a, b) => b.count - a.count);
+
+	const activeOfficialLeagues = leaguesWithCount.filter((x) => !x.league.is_practice);
+	const leagueStandings = await Promise.all(
+		activeOfficialLeagues.map(async ({ league }) => ({
+			league,
+			standings: await getLeagueLeaderboard(league.id),
+		})),
+	);
 
 	const leagueOrder: string[] = [];
 	const byLeague = new Map<string, MatchWithResults[]>();
@@ -123,6 +136,79 @@ export default async function HomePage() {
 						</table>
 					</div>
 				</section>
+
+				{/* Standings per active official league */}
+				{leagueStandings.length > 0 && (
+					<section>
+						<h2 className="text-xl font-bold mb-4">League Standings</h2>
+						<div className="flex flex-col gap-4">
+							{leagueStandings.map(({ league, standings }) => (
+								<div key={league.id}>
+									<div className="flex items-center gap-3 mb-3">
+										<Link
+											href={`/leagues/${league.id}`}
+											className="text-sm font-semibold text-foreground/60 hover:text-accent transition-colors"
+										>
+											{league.name}
+										</Link>
+										<div className="flex-1 border-t border-border" />
+									</div>
+									<div className="rounded-lg border border-border overflow-hidden">
+										<table className="w-full bg-background/90 text-sm">
+											<thead className="bg-surface text-foreground/60 uppercase text-xs tracking-wider">
+												<tr>
+													<th className="px-4 py-2 text-left">Rank</th>
+													<th className="px-4 py-2 text-left">Player</th>
+													<th className="px-4 py-2 text-center">Points</th>
+													<th className="px-4 py-2 text-center">Matches</th>
+													<th className="px-4 py-2 text-right">Win %</th>
+												</tr>
+											</thead>
+											<tbody className="divide-y divide-border">
+												{standings.map((entry, i) => (
+													<tr
+														key={entry.player.id}
+														className={
+															i === 0 ? "bg-accent/10" : "hover:bg-surface transition-colors"
+														}
+													>
+														<td className="px-4 py-2 font-mono text-foreground/50">
+															{i === 0 ? (
+																<div className="flex gap-1 items-center">
+																	<span>#1</span>
+																	<RiStarFill size={14} className="text-accent" />
+																</div>
+															) : (
+																`#${entry.rank}`
+															)}
+														</td>
+														<td className="px-4 py-2 font-semibold">
+															<Link
+																href={`/player/${entry.player.id}`}
+																className="hover:text-accent transition-colors"
+															>
+																{entry.player.name}
+															</Link>
+														</td>
+														<td className="px-4 py-2 text-center font-bold text-accent">
+															{entry.totalPoints}
+														</td>
+														<td className="px-4 py-2 text-center text-foreground/70">
+															{entry.matches}
+														</td>
+														<td className="px-4 py-2 text-right text-foreground/70">
+															{entry.winRate}%
+														</td>
+													</tr>
+												))}
+											</tbody>
+										</table>
+									</div>
+								</div>
+							))}
+						</div>
+					</section>
+				)}
 
 				{/* Recent matches grouped by league */}
 				<section>
