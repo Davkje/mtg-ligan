@@ -12,9 +12,9 @@ export type Database = {
         Update: { id?: string; name?: string };
       };
       leagues: {
-        Row: { id: string; name: string; is_practice: boolean };
-        Insert: { id?: string; name: string; is_practice?: boolean };
-        Update: { id?: string; name?: string; is_practice?: boolean };
+        Row: { id: string; name: string; is_practice: boolean; is_closed: boolean; winner_id: string | null };
+        Insert: { id?: string; name: string; is_practice?: boolean; is_closed?: boolean; winner_id?: string | null };
+        Update: { id?: string; name?: string; is_practice?: boolean; is_closed?: boolean; winner_id?: string | null };
       };
       matches: {
         Row: { id: string; played_at: string; notes: string | null; league_id: string };

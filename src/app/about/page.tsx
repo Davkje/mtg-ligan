@@ -94,6 +94,9 @@ export default function AboutPage() {
 				<p className="text-sm text-foreground/40 mt-2">
 					Multipliers: 3 players = 0.8×, 4 players = 1.0× (base), 5 players = 1.2×
 				</p>
+				<p className="text-sm text-foreground/40 mt-1">
+					2-player games can only be registered in practice leagues for now.
+				</p>
 			</section>
 
 			{/* Rules */}

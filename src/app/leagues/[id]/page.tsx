@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLeagues, getLeagueLeaderboard, getLeagueMatches } from "@/lib/data";
 import { getPointsForPlacement } from "@/lib/types";
-import { RiArrowLeftLine, RiStarFill, RiTrophyLine, RiGamepadLine } from "@remixicon/react";
+import { RiArrowLeftLine, RiStarFill, RiTrophyFill, RiTrophyLine, RiGamepadLine } from "@remixicon/react";
 
 const PLACEMENT_LABEL: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th", 5: "5th" };
 
@@ -19,6 +19,10 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
     league.is_practice ? Promise.resolve([]) : getLeagueLeaderboard(id),
     getLeagueMatches(id, 10),
   ]);
+
+  const winner = league.is_closed
+    ? leaderboard.find((s) => s.player.id === league.winner_id)?.player ?? null
+    : null;
 
   return (
     <div className="max-w-lg mx-auto space-y-8">
@@ -47,7 +51,23 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
           >
             {league.is_practice ? "Practice" : "Official"}
           </span>
+          {league.is_closed && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-border text-foreground/50">
+              Completed
+            </span>
+          )}
         </div>
+        {winner && (
+          <div className="mt-4 flex items-center gap-3 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3">
+            <RiTrophyFill size={22} className="text-accent" />
+            <div>
+              <p className="text-xs uppercase tracking-wider text-foreground/50">League winner</p>
+              <Link href={`/player/${winner.id}`} className="font-bold hover:text-accent transition-colors">
+                {winner.name}
+              </Link>
+            </div>
+          </div>
+        )}
         {league.is_practice && (
           <p className="text-sm text-foreground/40 mt-2">
             Practice games track personal stats but don&apos;t count toward the overall standings.
@@ -58,7 +78,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ id: str
       {/* Leaderboard — official leagues only */}
       {!league.is_practice && (
         <section>
-          <h2 className="text-xl font-bold mb-4">Standings</h2>
+          <h2 className="text-xl font-bold mb-4">{league.is_closed ? "Final Standings" : "Standings"}</h2>
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full bg-background/90 text-sm">
               <thead className="bg-surface text-foreground/60 uppercase text-xs tracking-wider">

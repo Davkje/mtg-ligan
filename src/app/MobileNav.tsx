@@ -11,6 +11,7 @@ const links = [
 	{ href: "/history", label: "Matches" },
 	{ href: "/players", label: "Players" },
 	{ href: "/leagues", label: "Leagues" },
+	{ href: "/play", label: "Play" },
 	{ href: "/register", label: "Register Match" },
 	{ href: "/about", label: "About" },
 ];

@@ -57,6 +57,14 @@ alter table match_results
   add constraint unique_placement_per_match unique (match_id, placement);
 ```
 
+Closed leagues (league winner):
+
+```sql
+alter table leagues
+  add column is_closed boolean not null default false,
+  add column winner_id uuid references players(id) on delete set null;
+```
+
 ### 4. Run the dev server
 
 ```bash

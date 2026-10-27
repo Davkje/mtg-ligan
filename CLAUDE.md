@@ -2,7 +2,7 @@
 
 # MTG Commander League — Project Overview
 
-A fullstack web app for a Magic: The Gathering Commander league. Supports 3–5 player games.
+A fullstack web app for a Magic: The Gathering Commander league. Supports 2–5 player games (2-player only in practice leagues for now).
 
 ## Stack
 - **Next.js 16.2.3** (App Router) — see AGENTS.md for breaking-change notes
@@ -24,6 +24,7 @@ MASTER_PASSWORD=     # protects deleting matches and deleting players
 | Route | Description |
 |-------|-------------|
 | `/` | Leaderboard + last 5 matches feed |
+| `/play` | Life counter (2–5 players, life + commander damage); "Register game" prefills `/register` |
 | `/register` | Password-protected match registration form |
 | `/history` | Full match history; edit (admin) / delete (master) |
 | `/players` | All players list + add player (admin) |
@@ -48,6 +49,12 @@ Scoring is always calculated dynamically via `getPoints(playerCount, placement)`
 - `players` — id, name
 - `matches` — id, played_at (date), notes (text, nullable)
 - `match_results` — id, match_id, player_id, placement (1–5)
+
+## Life Counter (`/play`)
+- Pure state/logic in `src/lib/lifeCounter.ts` (reducer with undo, placements from KO order, fixed layouts per player count)
+- Game persists in localStorage `ligan:play:game`; "Register game" writes `ligan:play:draft`, which `RegisterForm` applies after admin login
+- Commanders not yet in the DB travel as `new:<name>` and are created on submit
+- 2-player games can only be registered in practice leagues (enforced in `/api/matches` POST + PUT)
 
 ## Admin Auth
 - `ADMIN_PASSWORD` → cookie `admin_session` via `POST /api/auth` — protects creating/editing matches, adding/renaming players

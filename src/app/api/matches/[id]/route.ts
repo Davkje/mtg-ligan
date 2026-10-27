@@ -51,8 +51,27 @@ export async function PUT(
   };
 
   const n = entries.length;
-  if (n < 3 || n > 5) {
-    return Response.json({ error: "Match must have 3–5 players." }, { status: 400 });
+  if (n < 2 || n > 5) {
+    return Response.json({ error: "Match must have 2–5 players." }, { status: 400 });
+  }
+  if (n === 2) {
+    // 2-player games are only allowed in practice leagues — check the league the match ends up in
+    let targetLeagueId = leagueId;
+    if (!targetLeagueId) {
+      const { data } = await supabase.from("matches").select("league_id").eq("id", id).single();
+      targetLeagueId = (data as { league_id: string } | null)?.league_id;
+    }
+    const { data: leagueData } = await supabase
+      .from("leagues")
+      .select("is_practice")
+      .eq("id", targetLeagueId ?? "")
+      .single();
+    if (!(leagueData as { is_practice: boolean } | null)?.is_practice) {
+      return Response.json(
+        { error: "2-player games can only be registered in practice leagues." },
+        { status: 400 },
+      );
+    }
   }
   const placements = entries.map((e) => e.placement);
   if (placements.some((p) => p < 1 || p > n)) {

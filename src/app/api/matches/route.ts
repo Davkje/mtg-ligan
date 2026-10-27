@@ -24,9 +24,28 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "League is required." }, { status: 400 });
   }
 
+  const { data: leagueData } = await supabase
+    .from("leagues")
+    .select("is_closed, is_practice")
+    .eq("id", leagueId)
+    .single();
+  const league = leagueData as { is_closed: boolean; is_practice: boolean } | null;
+  if (!league) {
+    return Response.json({ error: "League not found." }, { status: 404 });
+  }
+  if (league.is_closed) {
+    return Response.json({ error: "This league is closed." }, { status: 409 });
+  }
+
   const n = entries.length;
-  if (n < 3 || n > 5) {
-    return Response.json({ error: "Match must have 3–5 players." }, { status: 400 });
+  if (n < 2 || n > 5) {
+    return Response.json({ error: "Match must have 2–5 players." }, { status: 400 });
+  }
+  if (n === 2 && !league.is_practice) {
+    return Response.json(
+      { error: "2-player games can only be registered in practice leagues." },
+      { status: 400 },
+    );
   }
 
   // Validate placements: all between 1 and n, must include 1, no duplicate player IDs

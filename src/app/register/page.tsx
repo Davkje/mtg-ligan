@@ -12,7 +12,7 @@ export default async function RegisterPage() {
     <RegisterForm
       players={players}
       commanders={commanders}
-      leagues={leagues}
+      leagues={leagues.filter((l) => !l.is_closed)}
       playerCommanderUsage={playerCommanderUsage}
     />
   );

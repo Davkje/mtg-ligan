@@ -38,6 +38,21 @@ export async function getPlayerCommanderUsage(): Promise<Record<string, string[]
   return result;
 }
 
+// Returns per-league player IDs who have played at least one match there
+export async function getLeaguePlayerIds(): Promise<Record<string, string[]>> {
+  const { data } = await supabase.from("match_results").select("player_id, matches(league_id)");
+
+  const byLeague = new Map<string, Set<string>>();
+  for (const r of (data ?? []) as { player_id: string; matches: { league_id: string } | null }[]) {
+    const leagueId = r.matches?.league_id;
+    if (!leagueId) continue;
+    if (!byLeague.has(leagueId)) byLeague.set(leagueId, new Set());
+    byLeague.get(leagueId)!.add(r.player_id);
+  }
+
+  return Object.fromEntries([...byLeague].map(([leagueId, ids]) => [leagueId, [...ids]]));
+}
+
 export type MatchSummary = {
   total: number;
   ranked: number;

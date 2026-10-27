@@ -48,6 +48,9 @@ export default function RootLayout({
 							<Link href="/leagues" className="hover:text-accent transition-colors">
 								Leagues
 							</Link>
+							<Link href="/play" className="hover:text-accent transition-colors">
+								Play
+							</Link>
 							<Link href="/register" className="hover:text-accent transition-colors">
 								Register Match
 							</Link>

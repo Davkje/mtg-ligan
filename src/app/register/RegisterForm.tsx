@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Commander, League, Player } from "@/lib/types";
 import { getPointsForPlacement } from "@/lib/types";
-import { RiCheckboxCircleLine } from "@remixicon/react";
+import { RiAddLine, RiCheckboxCircleLine, RiGamepadLine } from "@remixicon/react";
 import CommanderSearch from "@/components/CommanderSearch";
+import { clearRegisterDraft, readRegisterDraft } from "@/lib/lifeCounter";
 
 const PLACEMENT_LABEL: Record<number, string> = {
 	1: "1st",
@@ -15,9 +16,10 @@ const PLACEMENT_LABEL: Record<number, string> = {
 	4: "4th",
 	5: "5th",
 };
-const PLAYER_COUNTS = [3, 4, 5] as const;
+const PLAYER_COUNTS = [2, 3, 4, 5] as const;
 type PlayerCount = (typeof PLAYER_COUNTS)[number];
 
+// playerId / commanderId: id | "new:<name>" (from the life counter, created on submit); commanderId may be ""
 type Entry = { playerId: string; placement: number; commanderId: string };
 
 function makeDefaultEntries(count: number): Entry[] {
@@ -60,6 +62,7 @@ export default function RegisterForm({
 	const [submitError, setSubmitError] = useState("");
 	const [submitLoading, setSubmitLoading] = useState(false);
 	const [success, setSuccess] = useState(false);
+	const [fromDraft, setFromDraft] = useState(false);
 
 	// Inline new player
 	const [showNewPlayer, setShowNewPlayer] = useState(false);
@@ -80,9 +83,35 @@ export default function RegisterForm({
 	const [newLeagueLoading, setNewLeagueLoading] = useState(false);
 	const [newLeagueError, setNewLeagueError] = useState("");
 
+	const selectedLeague = leagues.find((l) => l.id === leagueId);
+
 	function changePlayerCount(count: PlayerCount) {
 		setPlayerCount(count);
 		setEntries(makeDefaultEntries(count));
+		// 2-player games can only go into practice leagues
+		if (count === 2 && !selectedLeague?.is_practice) {
+			setLeagueId(leagues.find((l) => l.is_practice)?.id ?? "");
+		}
+	}
+
+	// Prefill from a finished life counter game, if there is one
+	function applyDraft() {
+		const draft = readRegisterDraft();
+		if (!draft) return;
+		const count = draft.entries.length as PlayerCount;
+		if (!PLAYER_COUNTS.includes(count)) return;
+		setPlayerCount(count);
+		setEntries(
+			draft.entries.map((e) => ({
+				playerId: e.playerId ?? `new:${e.playerName}`,
+				placement: e.placement,
+				commanderId: e.commanderId ?? (e.commanderName ? `new:${e.commanderName}` : ""),
+			})),
+		);
+		const allowed = leagues.filter((l) => count !== 2 || l.is_practice);
+		setLeagueId(allowed.find((l) => l.id === draft.leagueId)?.id ?? allowed[0]?.id ?? "");
+		setPlayedAt(draft.playedAt);
+		setFromDraft(true);
 	}
 
 	function updateEntry(index: number, patch: Partial<Entry>) {
@@ -123,8 +152,10 @@ export default function RegisterForm({
 			body: JSON.stringify({ password }),
 		});
 		setAuthLoading(false);
-		if (res.ok) setAuthed(true);
-		else setAuthError("Wrong password.");
+		if (res.ok) {
+			setAuthed(true);
+			applyDraft();
+		} else setAuthError("Wrong password.");
 	}
 
 	async function handleAddPlayer(e: React.SyntheticEvent) {
@@ -223,16 +254,79 @@ export default function RegisterForm({
 			setSubmitError("At least one player must be in 1st place.");
 			return;
 		}
+		if (playerCount === 2 && !selectedLeague?.is_practice) {
+			setSubmitError("2-player games can only be registered in practice leagues.");
+			return;
+		}
 		setSubmitLoading(true);
+
+		// Create players that came from the life counter but aren't in the DB yet
+		let playerList = players;
+		const findPlayer = (name: string) => playerList.find((p) => p.name.toLowerCase() === name.toLowerCase());
+		const missingPlayers = entries
+			.filter((e) => e.playerId.startsWith("new:") && !findPlayer(e.playerId.slice(4)))
+			.map((e) => e.playerId.slice(4));
+		for (const name of missingPlayers) {
+			const created = await fetch("/api/players", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name }),
+			});
+			if (!created.ok) {
+				setSubmitLoading(false);
+				setSubmitError(`Could not add player "${name}".`);
+				return;
+			}
+		}
+		if (missingPlayers.length > 0) {
+			const refreshed = await fetch("/api/players");
+			if (refreshed.ok) {
+				playerList = (await refreshed.json()).players;
+				setPlayers(playerList);
+			}
+		}
+		const resolvePlayer = (value: string) =>
+			value.startsWith("new:") ? (findPlayer(value.slice(4))?.id ?? value) : value;
+
+		// Create commanders that came from the life counter but aren't in the DB yet
+		let commanderList = commanders;
+		const findByName = (name: string) =>
+			commanderList.find((c) => c.name.toLowerCase() === name.toLowerCase());
+		const newNames = [
+			...new Set(entries.filter((e) => e.commanderId.startsWith("new:")).map((e) => e.commanderId.slice(4))),
+		];
+		const missing = newNames.filter((name) => !findByName(name));
+		for (const name of missing) {
+			const created = await fetch("/api/commanders", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name }),
+			});
+			if (!created.ok) {
+				setSubmitLoading(false);
+				setSubmitError(`Could not add commander "${name}".`);
+				return;
+			}
+		}
+		if (missing.length > 0) {
+			const refreshed = await fetch("/api/commanders");
+			if (refreshed.ok) {
+				commanderList = (await refreshed.json()).commanders;
+				setCommanders(commanderList);
+			}
+		}
+		const resolveCommander = (value: string) =>
+			value.startsWith("new:") ? (findByName(value.slice(4))?.id ?? null) : value || null;
+
 		const res = await fetch("/api/matches", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				playedAt,
 				entries: entries.map((e) => ({
-					playerId: e.playerId,
+					playerId: resolvePlayer(e.playerId),
 					placement: e.placement,
-					commanderId: e.commanderId || null,
+					commanderId: resolveCommander(e.commanderId),
 				})),
 				notes,
 				leagueId,
@@ -241,6 +335,7 @@ export default function RegisterForm({
 		setSubmitLoading(false);
 		if (res.ok) {
 			setSuccess(true);
+			if (fromDraft) clearRegisterDraft();
 			router.refresh();
 		} else {
 			const data = await res.json();
@@ -250,6 +345,7 @@ export default function RegisterForm({
 
 	function reset() {
 		setSuccess(false);
+		setFromDraft(false);
 		setEntries(makeDefaultEntries(4));
 		setPlayedAt(today);
 		setPlayerCount(4);
@@ -308,11 +404,15 @@ export default function RegisterForm({
 		);
 	}
 
-	const selectedLeague = leagues.find((l) => l.id === leagueId);
-
 	return (
 		<div className="max-w-lg mx-auto">
 			<h1 className="text-2xl font-bold mb-6">Register Match</h1>
+			{fromDraft && (
+				<div className="mb-6 flex items-center gap-2 rounded border border-accent/30 bg-accent/5 px-3 py-2 text-sm">
+					<RiGamepadLine size={16} className="text-accent shrink-0" />
+					<span className="flex-1">Prefilled from the life counter — check and submit.</span>
+				</div>
+			)}
 			<form onSubmit={handleSubmit} className="space-y-6">
 				{/* Date */}
 				<div>
@@ -336,9 +436,12 @@ export default function RegisterForm({
 								setShowNewLeague((v) => !v);
 								setNewLeagueError("");
 							}}
-							className="text-xs text-accent hover:underline"
+							className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
 						>
-							{showNewLeague ? "Cancel" : "+ New league"}
+							{showNewLeague ? "Cancel" : <>
+								<RiAddLine size={14} />
+								New league
+							</>}
 						</button>
 					</div>
 
@@ -387,7 +490,8 @@ export default function RegisterForm({
 								key={l.id}
 								type="button"
 								onClick={() => setLeagueId(l.id)}
-								className={`rounded border px-3 py-2 text-sm font-medium transition-colors ${
+								disabled={playerCount === 2 && !l.is_practice}
+								className={`rounded border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
 									leagueId === l.id
 										? "border-accent bg-accent/20 text-accent"
 										: "border-border hover:bg-surface text-foreground/70"
@@ -403,6 +507,11 @@ export default function RegisterForm({
 					{selectedLeague?.is_practice && (
 						<p className="text-xs text-foreground/40 mt-1.5">
 							Practice games do not count toward league standings.
+						</p>
+					)}
+					{playerCount === 2 && (
+						<p className="text-xs text-foreground/40 mt-1.5">
+							2-player games can only be registered in practice leagues for now.
 						</p>
 					)}
 				</div>
@@ -439,9 +548,12 @@ export default function RegisterForm({
 									setShowNewCommander((v) => !v);
 									setNewCommanderError("");
 								}}
-								className="text-xs text-accent hover:underline"
+								className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
 							>
-								{showNewCommander ? "Cancel" : "+ New commander"}
+								{showNewCommander ? "Cancel" : <>
+									<RiAddLine size={14} />
+									New commander
+								</>}
 							</button>
 							<button
 								type="button"
@@ -449,9 +561,12 @@ export default function RegisterForm({
 									setShowNewPlayer((v) => !v);
 									setNewPlayerError("");
 								}}
-								className="text-xs text-accent hover:underline"
+								className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
 							>
-								{showNewPlayer ? "Cancel" : "+ New player"}
+								{showNewPlayer ? "Cancel" : <>
+									<RiAddLine size={14} />
+									New player
+								</>}
 							</button>
 						</div>
 					</div>
@@ -532,6 +647,9 @@ export default function RegisterForm({
 									className="rounded border border-border bg-surface px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
 								>
 									<option value="">— player —</option>
+									{entry.playerId.startsWith("new:") && (
+										<option value={entry.playerId}>{entry.playerId.slice(4)} (new)</option>
+									)}
 									{players.map((p) => (
 										<option
 											key={p.id}
@@ -557,6 +675,9 @@ export default function RegisterForm({
 											className="rounded border border-border bg-surface px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent text-foreground/70"
 										>
 											<option value="">— none —</option>
+											{entry.commanderId.startsWith("new:") && (
+												<option value={entry.commanderId}>{entry.commanderId.slice(4)} (new)</option>
+											)}
 											{frequent.length > 0 && (
 												<optgroup label="Previously played">
 													{frequent.map((c) => (

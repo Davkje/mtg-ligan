@@ -43,7 +43,7 @@ export default async function HomePage() {
 
 	const leaguesWithCount = leagues
 		.map((l) => ({ league: l, count: summary.byLeague.get(l.id) ?? 0 }))
-		.filter((x) => x.count > 0)
+		.filter((x) => x.count > 0 && !x.league.is_closed)
 		.sort((a, b) => b.count - a.count);
 
 	const activeOfficialLeagues = leaguesWithCount.filter((x) => !x.league.is_practice);
@@ -234,71 +234,41 @@ export default async function HomePage() {
 												const playerCount = match.results.length;
 												const allPlacements = match.results.map((r) => r.placement);
 												return (
-													<div
+													<Link
 														key={match.id}
-														className="rounded-lg border border-border bg-surface p-3 md:p-4"
+														href={`/match/${match.id}`}
+														className="block rounded-lg border border-border bg-background/60 hover:bg-surface transition-colors px-4 py-3"
 													>
-														<div className="flex items-center gap-2 mb-3">
-															<Link
-																href={`/match/${match.id}`}
-																className="group flex gap-2 text-sm transition-colors"
-															>
-																<span className="text-foreground/70 group-hover:text-accent transition-colors">
-																	{new Date(match.played_at).toLocaleDateString("sv-SE", {
-																		year: "numeric",
-																		month: "long",
-																		day: "numeric",
-																	})}
-																</span>
-																<span className="text-foreground/40 group-hover:text-accent transition-colors">
-																	{playerCount} players
-																</span>
-															</Link>
+														<div className="flex items-center justify-between mb-2">
+															<span className="text-xs text-foreground/40">
+																{new Date(match.played_at).toLocaleDateString("sv-SE")}
+															</span>
+															<span className="text-xs text-foreground/30">{playerCount} players</span>
 														</div>
-														<div
-															className="grid gap-2"
-															style={{
-																gridTemplateColumns: `repeat(${playerCount}, minmax(0, 1fr))`,
-															}}
-														>
+														<div className="space-y-1">
 															{match.results.map((r) => {
-																const pts = getPointsForPlacement(
-																	allPlacements,
-																	r.placement,
-																	playerCount,
-																);
-																const tied =
-																	allPlacements.filter((p) => p === r.placement).length > 1;
+																const pts = getPointsForPlacement(allPlacements, r.placement, playerCount);
 																return (
-																	<div
-																		key={r.id}
-																		className="flex flex-col justify-center items-center gap-1 bg-background/70 rounded px-3 py-3 text-center"
-																	>
-																		<div className="flex gap-1.5 font-semibold text-sm flex-wrap justify-center">
-																			<Link
-																				href={`/player/${r.player.id}`}
-																				className="hover:text-accent transition-colors"
-																			>
-																				{r.player.name}
-																			</Link>
-																			<span className="text-accent">
+																	<div key={r.id} className="flex items-center justify-between gap-3 text-sm">
+																		<div className="flex items-center gap-2 min-w-0">
+																			<span className="text-xs text-foreground/40 w-6 shrink-0">
 																				{PLACEMENT_LABEL[r.placement]}
-																				{tied ? "T" : ""}
 																			</span>
+																			<span className={`shrink-0 ${r.placement === 1 ? "font-semibold" : ""}`}>
+																				{r.player.name}
+																			</span>
+																			{r.commander && (
+																				<span className="text-xs text-foreground/40 truncate">{r.commander.name}</span>
+																			)}
 																		</div>
-																		{r.commander && (
-																			<div className="text-xs text-foreground/40 truncate w-full text-center">
-																				{r.commander.name}
-																			</div>
-																		)}
 																		{!league.is_practice && (
-																			<div className="text-xs text-foreground/50">+{pts}</div>
+																			<span className="text-xs text-accent font-medium shrink-0">+{pts}</span>
 																		)}
 																	</div>
 																);
 															})}
 														</div>
-													</div>
+													</Link>
 												);
 											})}
 										</div>

@@ -7,6 +7,7 @@ import type { Commander, League, Player } from "@/lib/types";
 import { getPointsForPlacement } from "@/lib/types";
 import type { MatchWithResults } from "@/lib/data";
 import CommanderSearch from "@/components/CommanderSearch";
+import { RiAddLine } from "@remixicon/react";
 
 const PLACEMENT_LABEL: Record<number, string> = {
 	1: "1st",
@@ -16,7 +17,7 @@ const PLACEMENT_LABEL: Record<number, string> = {
 	5: "5th",
 };
 
-const PLAYER_COUNTS = [3, 4, 5] as const;
+const PLAYER_COUNTS = [2, 3, 4, 5] as const;
 type PlayerCount = (typeof PLAYER_COUNTS)[number];
 
 type Props = {
@@ -122,7 +123,7 @@ export default function MatchList({
 	}
 
 	function startEdit(match: MatchWithResults) {
-		const playerCount = Math.max(3, Math.min(5, match.results.length)) as PlayerCount;
+		const playerCount = Math.max(2, Math.min(5, match.results.length)) as PlayerCount;
 		const entries: EntryState[] = [...match.results]
 			.sort((a, b) => a.placement - b.placement)
 			.map((r) => ({
@@ -162,6 +163,11 @@ export default function MatchList({
 				? {
 						...prev,
 						playerCount: count,
+						// 2-player games can only go into practice leagues
+						leagueId:
+							count === 2 && !leagues.find((l) => l.id === prev.leagueId)?.is_practice
+								? (leagues.find((l) => l.is_practice)?.id ?? prev.leagueId)
+								: prev.leagueId,
 						entries: Array.from({ length: count }, (_, i) => ({
 							playerId: prev.entries[i]?.playerId ?? "",
 							placement: i + 1,
@@ -432,7 +438,11 @@ export default function MatchList({
 													className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
 												>
 													{leagues.map((l) => (
-														<option key={l.id} value={l.id}>
+														<option
+															key={l.id}
+															value={l.id}
+															disabled={editState.playerCount === 2 && !l.is_practice}
+														>
 															{l.name}
 														</option>
 													))}
@@ -478,9 +488,12 @@ export default function MatchList({
 														setShowNewCommander((v) => !v);
 														setNewCommanderError("");
 													}}
-													className="text-xs text-accent hover:underline ml-2 shrink-0"
+													className="inline-flex items-center gap-1 text-xs text-accent hover:underline ml-2 shrink-0"
 												>
-													{showNewCommander ? "Cancel" : "+ New commander"}
+													{showNewCommander ? "Cancel" : <>
+														<RiAddLine size={14} />
+														New commander
+													</>}
 												</button>
 											</div>
 
