@@ -30,6 +30,24 @@ function subscribeNoop() {
 	return () => {};
 }
 
+// Real fullscreen where the browser allows it (Android/desktop). iPhone browsers don't support it —
+// there the app has to be added to the home screen to hide the browser bars.
+function enterFullscreen() {
+	try {
+		if (!document.fullscreenElement) document.documentElement.requestFullscreen?.()?.catch(() => {});
+	} catch {
+		// unsupported
+	}
+}
+
+function exitFullscreen() {
+	try {
+		if (document.fullscreenElement) document.exitFullscreen?.()?.catch(() => {});
+	} catch {
+		// unsupported
+	}
+}
+
 export default function LifeCounter(props: Props) {
 	const router = useRouter();
 	const [phase, setPhase] = useState<Phase>("setup");
@@ -48,6 +66,7 @@ export default function LifeCounter(props: Props) {
 	}, [savedRaw, savedDismissed]);
 
 	function startGame(next: GameState) {
+		enterFullscreen();
 		saveGame(next);
 		setSavedDismissed(false);
 		setGame(next);
@@ -55,6 +74,7 @@ export default function LifeCounter(props: Props) {
 	}
 
 	function exitGame() {
+		exitFullscreen();
 		saveGame(null);
 		setPhase("setup");
 	}
@@ -95,8 +115,12 @@ export default function LifeCounter(props: Props) {
 			<GameBoard
 				initialGame={game}
 				editor={editor}
-				onHome={() => router.push("/")}
+				onHome={() => {
+					exitFullscreen();
+					router.push("/");
+				}}
 				onEnd={(final) => {
+					exitFullscreen();
 					setGame(final);
 					setPhase("results");
 				}}
@@ -110,7 +134,10 @@ export default function LifeCounter(props: Props) {
 			<Results
 				game={game}
 				leagues={props.leagues}
-				onBack={() => setPhase("game")}
+				onBack={() => {
+					enterFullscreen();
+					setPhase("game");
+				}}
 				onNewGame={() => {
 					saveGame(null);
 					setPhase("setup");
@@ -127,6 +154,7 @@ export default function LifeCounter(props: Props) {
 			savedGame={savedGame}
 			onStart={startGame}
 			onResume={(saved) => {
+				enterFullscreen();
 				setGame(saved);
 				setPhase("game");
 			}}

@@ -89,3 +89,25 @@ header {
 		animation: none;
 	}
 }
+
+/* Never let anything push the page sideways (clip keeps the sticky header working) */
+html,
+body {
+	overflow-x: clip;
+}
+
+/* Form controls shrink to their column instead of growing with long option text */
+select,
+input {
+	min-width: 0;
+	max-width: 100%;
+}
+
+/* iOS zooms in on focused fields with text under 16px — keep them at 16px on touch screens */
+@media (pointer: coarse) {
+	input,
+	select,
+	textarea {
+		font-size: 16px;
+	}
+}

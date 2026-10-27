@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Jacquarda_Bastarda_9 } from "next/font/google";
 import Link from "next/link";
 import MobileNav from "./MobileNav";
@@ -19,6 +19,19 @@ const jacquarda = Jacquarda_Bastarda_9({
 export const metadata: Metadata = {
 	title: "Ligan - MTG Commander",
 	description: "Track standings and matches for your Commander league",
+	appleWebApp: {
+		capable: true,
+		title: "Ligan",
+		statusBarStyle: "black-translucent",
+	},
+};
+
+export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
+	// Lets content use the full screen on notched phones; padding uses env(safe-area-inset-*)
+	viewportFit: "cover",
+	themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -29,7 +42,7 @@ export default function RootLayout({
 	return (
 		<html lang="en" className={`${geist.variable} ${jacquarda.variable} h-full`}>
 			<body className="min-h-full flex flex-col text-foreground antialiased">
-				<header className="sticky top-0 z-50 ">
+				<header className="sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
 					<div className="max-w-350 mx-auto px-4 flex items-center gap-6 h-14">
 						<Link
 							href="/"

@@ -89,8 +89,13 @@ export default function GameBoard({ initialGame, editor, onEnd, onExit, onHome }
 
 	return (
 		<div
-			className="fixed inset-0 z-[100] grid h-dvh grid-cols-2 gap-1.5 bg-black p-1.5 select-none overscroll-none"
-			style={{ gridTemplateRows: layout.rows }}
+			className="fixed inset-0 z-[100] grid h-dvh grid-cols-2 gap-1.5 bg-black select-none overscroll-none"
+			style={{
+				gridTemplateRows: layout.rows,
+				// Keep panels clear of the notch / home indicator when running fullscreen
+				padding:
+					"max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left))",
+			}}
 		>
 			{layout.seats.map((s, i) => (
 				<PlayerPanel
